@@ -1,0 +1,1000 @@
+\documentclass[final,t]{beamer}
+\mode<presentation>
+{
+%  \usetheme{Warsaw}
+%  \usetheme{Aachen}
+  \usetheme{EllisTheme}
+%  \usetheme{I6td}
+%  \usetheme{I6dv}
+%  \usetheme{I6pd}
+%  \usetheme{I6pd2}
+}
+% additional settings
+\setbeamerfont{itemize}{size=\normalsize}
+\setbeamerfont{itemize/enumerate body}{size=\normalsize}
+\setbeamerfont{itemize/enumerate subbody}{size=\normalsize}
+
+% additional packages
+\usepackage{times}
+%\usepackage{setspace,mathpple}
+\usepackage{exscale}
+\usepackage[numbers,sort]{natbib}
+%\boldmath
+\usepackage{booktabs, array}
+%\usepackage{rotating} %sideways environment
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{tikz}
+\usetikzlibrary{shadows,arrows,positioning}
+\usetikzlibrary{shadows.blur}
+% Define the layers to draw the diagram
+\pgfdeclarelayer{background}
+\pgfdeclarelayer{foreground}
+\pgfsetlayers{background,main,foreground}
+
+% Define block styles
+\tikzstyle{materia}=[draw, fill=yellow!50!orange!80, text width=0.95\textwidth, ,
+  minimum height=1.5em,drop shadow]
+\tikzstyle{etape} = [materia, text width=0.9\textwidth, minimum width=0.9\textwidth,
+  minimum height=3em, rounded corners, blur shadow={shadow blur steps=5}]
+\tikzstyle{texto} = [below right, text width=36em, text left]
+\tikzstyle{linepart} = [draw, thick, color=red, -latex', dashed]
+\tikzstyle{line} = [draw, thick,line width=1mm, color=red, -triangle 45]
+\tikzstyle{ur}=[draw, text centered, minimum height=0.01em]
+
+% Define distances for bordering
+\newcommand{\blockdist}{1.3}
+\newcommand{\edgedist}{1.5}
+
+\newcommand{\etape}[2]{node (p#1) [etape]
+  {#2}}
+
+\newcommand{\background}[5]{%
+  \begin{pgfonlayer}{background}
+    % Left-top corner of the background rectangle
+    \path (#1.west |- #2.north)+(-2.5,1) node (a1) {};
+    % Right-bottom corner of the background rectanle
+    \path (#3.east |- #4.south)+(+2.5,-0.25) node (a2) {};
+    % Draw the background
+    \path[fill=yellow!20,rounded corners, draw=black!50, dashed]
+      (a1) rectangle (a2);
+    \path (a1.east |- a1.south)+(0,0) node (u1)[texto, text width=40.0em]
+      {\textit{#5}};
+  \end{pgfonlayer}}
+
+\newcommand{\transreceptor}[3]{%
+  \path [linepart] (#1.east) -- node [above]
+    {\scriptsize #2} (#3);}
+
+\usepackage[orientation=Portrait,size=a0,scale =1.23]{beamerposter}%custom,width=200,height=120,scale=1.9]{beamerposter}
+
+
+
+\listfiles
+\graphicspath{{figures/}}
+% Display a grid to help align images
+%\beamertemplategridbackground[1cm]
+\title{\huge Hierarchical integration of multi-layered data for classification and biomarker discovery in the presence of sample heterogeneity.}
+\author[Patrick et al.]{Ellis Patrick$^1$, Sarah-Jane Schramm$^2$, John T. Ormerod$^1$, Graham J. Mann$^2$, Samuel M\"uller$^1$ and Jean Y. H. Yang$^1$.}
+\institute[Sydney Uni]{$^1$School of Mathematics and Statistics, The University of Sydney and
+$^2$Sydney Medical School, The University of Sydney.}
+%\date[Aug. 31 , 2007]{Aug. 31 , 2007}
+
+% abbreviations
+\usepackage{xspace}
+\makeatletter
+\DeclareRobustCommand\onedot{\futurelet\@let@token\@onedot}
+\def\@onedot{\ifx\@let@token.\else.\null\fi\xspace}
+\def\eg{{e.g}\onedot} \def\Eg{{E.g}\onedot}
+\def\ie{{i.e}\onedot} \def\Ie{{I.e}\onedot}
+\def\cf{{c.f}\onedot} \def\Cf{{C.f}\onedot}
+\def\etc{{etc}\onedot}
+\def\vs{{vs}\onedot}
+\def\wrt{w.r.t\onedot}
+\def\dof{d.o.f\onedot}
+\def\etal{{et al}\onedot}
+%\def\newblock{\hskip .11em plus .33em minus .07em}
+\makeatother
+
+\setbeamertemplate{caption}[numbered] 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+
+<<include=FALSE>>=
+library(knitr)
+options(replace.assign=FALSE,width=50)
+opts_chunk$set(fig.path='figure/graphics-poster', cache.path='cache/poster', fig.align='center', cache=TRUE, include=FALSE)
+@
+
+%Read in all the data
+<<>>=
+library(MASS)
+library(limma)
+library(xtable)
+source('DLDA.R')
+seed = 123
+#read in melanoma data. This includes "GE.melanoma", "prognosis.melanoma" and "CPM.melanoma"
+load('melanomaData.RData')
+set.seed(seed)
+CPM.melanoma = CPM.melanoma[,colSums(is.na(CPM.melanoma))<=1]
+CPM.melanoma = CPM.melanoma[rowSums(is.na(CPM.melanoma))==0,]
+
+class.melanoma = (prognosis.melanoma[rownames(CPM.melanoma)]=='GP')*1
+GE.melanoma = GE.melanoma[,rownames(CPM.melanoma)]
+#read in breast cancer data.
+
+Data = read.delim('breastTumorExpression.txt')
+x= Data[-1,1]
+Data = Data[-1,]
+Data = Data[,-1]
+Data = apply(Data,2,function(x)as.numeric(as.character(x)))
+rownames(Data) = x
+GE.breast =  normalizeQuantiles(Data)
+
+CPM.breast = read.delim('E-TABM-158.sdrf.txt',header = TRUE,stringsAsFactors = FALSE)
+rownames(CPM.breast) = CPM.breast$Hybridization.Name
+x = which(CPM.breast$Characteristics..TumorStaging. == 2& as.numeric(CPM.breast$Characteristics..distal.recurrence.time.)<5&CPM.breast$Characteristics..recurrence.=='yes')
+y = which(CPM.breast$Characteristics..TumorStaging. == 2& as.numeric(CPM.breast$Characteristics..distal.recurrence.time.)>5)
+class.breast = c(rep(0,length(x)),rep(1,length(y)))
+names(class.breast) = rownames(CPM.breast)[c(x,y)]
+table(class.breast)
+          
+int = intersect(names(class.breast),colnames(GE.breast))
+GE.breast = GE.breast[,int] 
+class.breast = class.breast[int]
+
+use = c('Characteristics..node.positive.','Characteristics..hormonal.therapy.','Characteristics..TumorGrading.','Characteristics..chemotherapy.treatment.','Characteristics..Ethnicity.','Characteristics..tumor.size..mm..',"Characteristics..radiation.treatment.","Characteristics..Progesterone.Receptor.status.","Characteristics..age.at.diagnosis.","Characteristics..EstrogenReceptorStatus.")
+cpm = CPM.breast[names(class.breast),use]
+colnames(cpm) = gsub('Characteristics..','',colnames(cpm))
+cpm$tumor.size..mm.. = as.numeric(cpm$tumor.size..mm..)
+cpm$age.at.diagnosis. = as.numeric(cpm$age.at.diagnosis.)
+cpm[cpm=='n/a'] = NA
+for(i in 1:dim(cpm)[2])if(class(cpm[,i]) == 'character') cpm[,i] = as.factor(as.character(cpm[,i]))
+set.seed(seed)
+CPM.breast = cpm[rowSums(is.na(cpm))==0,]
+class.breast = class.breast[rownames(CPM.breast)]
+GE.breast = GE.breast[,rownames(CPM.breast)]
+
+
+nGene = 1000 #number of genes to use in DLDA
+nCPM = 20 #maximum number of CPM variables to use for classification
+nInt = 1 #number of CPM variables to use for model heterogeneity
+
+
+@
+
+%Perform LOOCV on the gene expression data.
+<<>>=
+
+
+GeneLOOCV = function(Data,class){
+  kfold = dim(Data)[2]
+  
+  bin = floor(dim(Data)[2]/kfold)
+  test = list()
+  bins =  for(j in 1:(kfold-1)){
+    test[[j]] = ((j-1)*bin+1):(j*bin)
+  }
+  test[[kfold]] = ((kfold-1)*bin+1):dim(Data)[2]
+  
+  
+  ord = sample(1:dim(Data)[2],dim(Data)[2])
+  class.ord = class[ord]
+  error = rep(NA,length(class))
+  disc = rep(NA,length(class))
+  for(i in 1:kfold){
+    
+    DataTest = as.matrix(Data[,ord[test[[i]]]])
+    colnames(DataTest) = colnames(Data)[ord[test[[i]]]]
+    DataTrain = Data[,ord[-test[[i]]]]
+    
+    classify = GeneClassify(Data = DataTrain,class = class.ord[-test[[i]]],Data.test = DataTest,class.test = class.ord[test[[i]]])
+    error[ord[test[[i]]]] =  classify$pred!=class.ord[test[[i]]]
+    disc[ord[test[[i]]]] = classify$disc
+  }
+  list(error = error,disc = disc)
+}
+
+GeneClassify = function(Data,class,Data.test,class.test){
+  #library(limma)
+  
+  Dat = Data
+  design = model.matrix(~class)
+  
+  D = rowMeans(Data[,class ==0])- rowMeans(Data[,class ==1])
+  sig = names(sort(-abs(D)))[1:nGene]
+  
+  x = data.frame(t(Data[sig,]))
+  
+  y= class
+  
+  DLDA(x,y,t(Data.test[sig,]))
+  
+  
+  
+}
+set.seed(seed,"L'Ecuyer")
+RESULTS = GeneLOOCV(GE.melanoma,class.melanoma)
+ErrorGene.melanoma = RESULTS$error
+
+RESULTS = GeneLOOCV(GE.breast,class.breast)
+ErrorGene.breast = RESULTS$error
+@
+
+
+
+%Perform LOOCV on the clinical data.
+<<>>=
+
+CPMLOOCV = function(Data,class,CPM){
+  kfold = dim(Data)[2]
+  
+  bin = floor(dim(Data)[2]/kfold)
+  test = list()
+  bins =  for(j in 1:(kfold-1)){
+    test[[j]] = ((j-1)*bin+1):(j*bin)
+  }
+  test[[kfold]] = ((kfold-1)*bin+1):dim(Data)[2]
+  
+  
+  ord = sample(1:dim(Data)[2],dim(Data)[2])
+  class.ord = class[ord]
+  error = rep(NA,length(class))
+  disc = rep(NA,length(class))
+  for(i in 1:kfold){
+    
+    DataTest = as.matrix(Data[,ord[test[[i]]]])
+    colnames(DataTest) = colnames(Data)[ord[test[[i]]]]
+    DataTrain = Data[,ord[-test[[i]]]]
+    
+    classify = CPMClassify(Data = DataTrain,class = class.ord[-test[[i]]],Data.test = DataTest,class.test = class.ord[test[[i]]],CPM)
+    error[ord[test[[i]]]] =  classify$pred!=class.ord[test[[i]]]
+    disc[ord[test[[i]]]] = classify$disc
+  }
+  list(error = error,disc = disc)
+}
+  
+
+CPMClassify = function(Data,class,Data.test,class.test,CPM){
+  y= (class)
+   x = data.frame(CPM[colnames(Data),])
+  nUniq = apply(x,2,function(x)length(unique(x)))
+  minPrev = apply(x,2,function(x)min(table(x)))
+inTest = sapply(1:dim(CPM)[2],function(i)mean(CPM[colnames(Data.test),i]%in%CPM[colnames(Data),i])==1)
+  use = names(which((minPrev>1&nUniq>1&inTest)|nUniq>10&inTest))
+  x = data.frame(CPM[colnames(Data),])
+
+form = formula(paste('y~(',paste(c(1,use),collapse = '+'),')'))
+quiet<- function(x){
+  sink(tempfile())
+  on.exit(sink())
+  invisible(force(x))
+}
+y = as.factor(class)
+fit = quiet(step(glm(y~1,x,family = binomial),scope = list(lower = formula('y~1'),upper = form)))
+main_effect = head(colnames(fit$model)[-1],nCPM)
+
+use = main_effect
+
+   x = (CPM[colnames(Data),])
+  form = formula(paste('y~(',paste(c(1,use),collapse = '+'),')'))
+
+ fit1 = glm(form,x,family = binomial)
+  x = (CPM[colnames(Data.test),])
+disc = predict(fit1,x,type = 'link')
+  pred2 = round(predict(fit1,x,type = 'response'))
+  
+  list(pred = pred2,disc = disc)
+}
+
+
+
+RESULTS = CPMLOOCV(GE.melanoma,class.melanoma,CPM.melanoma)
+ErrorCPM.melanoma = RESULTS$error
+mean(ErrorCPM.melanoma)
+
+RESULTS = CPMLOOCV(GE.breast,class.breast,CPM.breast)
+ErrorCPM.breast = RESULTS$error
+@
+
+%Perform LOOCV with prevalidation
+<<>>=
+
+PrevalLOOCV = function(i,Data,class,CPM){
+   kfold = dim(Data)[2]
+
+bin = floor(dim(Data)[2]/kfold)
+test = list()
+bins =  for(j in 1:(kfold-1)){
+  test[[j]] = ((j-1)*bin+1):(j*bin)
+}
+test[[kfold]] = ((kfold-1)*bin+1):dim(Data)[2]
+
+  
+  ord = 1:dim(Data)[2]
+  class.ord = class[ord]
+
+    
+    DataTest = as.matrix(Data[,ord[test[[i]]]])
+    colnames(DataTest) = colnames(Data)[ord[test[[i]]]]
+    DataTrain = Data[,ord[-test[[i]]]]
+    
+    error =  PrevalClassify(Data = DataTrain,class = class.ord[-test[[i]]],Data.test = DataTest,class.test = class.ord[test[[i]]],CPM)
+error
+
+}
+  
+
+PrevalClassify = function(Data,class,Data.test,class.test,CPM){
+   y= (class)
+    x = data.frame(CPM[colnames(Data),])
+ nUniq = apply(x,2,function(x)length(unique(x)))
+  minPrev = apply(x,2,function(x)min(table(x)))
+inTest = sapply(1:dim(CPM)[2],function(i)mean(CPM[colnames(Data.test),i]%in%CPM[colnames(Data),i])==1)
+  use = names(which((minPrev>1&nUniq>1&inTest)|nUniq>10&inTest))
+Gene = GeneLOOCV(Data = Data,class = class)$disc
+
+x = data.frame(CPM[colnames(Data),use],Gene = Gene)
+
+  nUniq = apply(x,2,function(x)length(unique(x)))
+  minPrev = apply(x,2,function(x)min(table(x)))
+inTest = sapply(1:dim(CPM)[2],function(i)mean(CPM[colnames(Data.test),i]%in%CPM[colnames(Data),i])==1)
+  use = names(which((minPrev>1&nUniq>1&inTest)|nUniq>10&inTest))
+form = formula(paste('y~(',paste(c(1,use),collapse = '+'),')'))
+quiet<- function(x){
+  sink(tempfile())
+  on.exit(sink())
+  invisible(force(x))
+}
+y = class
+fit = quiet(step(glm(y~Gene,x,family = binomial),scope = list(lower = formula('y~Gene'),upper = form)))
+ main_effect = head(colnames(fit$model)[-1],nCPM)
+
+
+
+
+
+use = unique(c(main_effect,'Gene'))
+
+   x = data.frame(CPM[colnames(Data),],Gene = Gene)
+  form = formula(paste('y~(',paste(c(1,use),collapse = '+'),')'))
+
+ fit1 = glm(form,x,family = binomial)
+
+
+ Dat = Data
+  design = model.matrix(~class)
+  D = rowMeans(Data[,class ==0])- rowMeans(Data[,class ==1])
+  sig = names(sort(-abs(D)))[1:nGene]
+  x = data.frame(t(Data[sig,]))
+  y= class
+  Gene = DLDA(x,y,t(Data.test[sig,]))$disc
+
+
+  x = data.frame(CPM[colnames(Data.test),],Gene = Gene)
+  pred2 = round(predict(fit1,x,type = 'response'))
+  
+  class.test!=pred2
+}
+set.seed(seed,"L'Ecuyer")
+#library(parallel) #If you have multiple cores on a non-windows machine try this!
+#ErrorPreval.melanoma = unlist(mclapply(as.list(1:dim(GE.melanoma)[2]),PrevalLOOCV,GE.melanoma,class.melanoma,CPM.melanoma,mc.cores = 34))
+#ErrorPreval.breast = unlist(mclapply(as.list(1:dim(GE.breast)[2]),PrevalLOOCV,GE.breast,class.breast,CPM.breast,mc.cores = 34))
+
+#If you are on windows use this, it will take awhile (10-15 minutes)
+ErrorPreval.melanoma = unlist(lapply(as.list(1:dim(GE.melanoma)[2]),PrevalLOOCV,GE.melanoma,class.melanoma,CPM.melanoma))
+ErrorPreval.breast = unlist(lapply(as.list(1:dim(GE.breast)[2]),PrevalLOOCV,GE.breast,class.breast,CPM.breast))
+
+@
+
+%Perform LOOCV with our multi-stage classification.
+<<>>=
+
+TwoStageLOOCV = function(i,Data,class,CPM){
+   kfold = dim(Data)[2]
+
+bin = floor(dim(Data)[2]/kfold)
+test = list()
+bins =  for(j in 1:(kfold-1)){
+  test[[j]] = ((j-1)*bin+1):(j*bin)
+}
+test[[kfold]] = ((kfold-1)*bin+1):dim(Data)[2]
+
+  
+  ord = 1:dim(Data)[2]
+  class.ord = class[ord]
+
+    
+    DataTest = as.matrix(Data[,ord[test[[i]]]])
+    colnames(DataTest) = colnames(Data)[ord[test[[i]]]]
+    DataTrain = Data[,ord[-test[[i]]]]
+    
+    error =  TwoStageClassify(Data = DataTrain,class = class.ord[-test[[i]]],Data.test = DataTest,class.test = class.ord[test[[i]]],CPM)
+    
+  error
+}
+  
+
+
+TwoStageClassify = function(Data,class,Data.test,class.test,CPM){
+  y= (class)
+  x = data.frame(CPM[colnames(Data),])
+  nUniq = apply(x,2,function(x)length(unique(x)))
+  minPrev = apply(x,2,function(x)min(table(x)))
+inTest = sapply(1:dim(CPM)[2],function(i)mean(CPM[colnames(Data.test),i]%in%CPM[colnames(Data),i])==1)
+  use = names(which((minPrev>1&nUniq>1&inTest)|nUniq>10&inTest))
+ x = data.frame(CPM[colnames(Data),])
+
+geneloocv = GeneLOOCV(Data = Data,class = class)
+Gene = geneloocv$disc
+y = (geneloocv$error)
+form = formula(paste('y~(',paste(c(1,use),collapse = '+'),')'))
+
+quiet<- function(x){
+  sink(tempfile())
+  on.exit(sink())
+  invisible(force(x))
+}
+fit = quiet(step(glm(y~1,x,family = binomial),scope = list(lower = formula('y~1'),upper = form)))
+ interaction_effect = head(colnames(fit$model)[-1],nInt)
+fit = glm(formula(paste('y~',paste(c(1,interaction_effect),collapse = '+',sep = '+'))),x,family = binomial)
+
+fitInt = fit
+  cut = mean(predict(fit,x,type ='response'))
+  geneUse = predict(fit,x,type ='response')<cut
+  
+  x = CPM[colnames(Data.test),]
+  predUse = predict(fit,x,type ='response')<cut
+  
+ 
+  y = (class)
+  Dat = Data
+  design = model.matrix(~class)
+  D = rowMeans(Data[,class ==0])- rowMeans(Data[,class ==1])
+  sig = names(sort(-abs(D)))[1:nGene]
+  x = data.frame(t(Data[sig,geneUse]))
+  y= class[geneUse]
+  Gene = DLDA(x,y,t(Data.test[sig,]))$pred
+
+
+
+
+     x = data.frame(CPM[colnames(Data),][!geneUse,])
+  nUniq = apply(x,2,function(x)length(unique(x)))
+  minPrev = apply(x,2,function(x)min(table(x)))
+inTest = sapply(1:dim(CPM)[2],function(i)mean(CPM[colnames(Data.test),i]%in%x[,i])==1)
+  use = names(which((minPrev>1&nUniq>1&inTest)|nUniq>10&inTest))
+
+x = data.frame(CPM[colnames(Data),][!geneUse,])
+
+form = formula(paste('y~(',paste(c(1,use),collapse = '+'),')'))
+quiet<- function(x){
+  sink(tempfile())
+  on.exit(sink())
+  invisible(force(x))
+}
+y = (class)[!geneUse]
+fit = quiet(step(glm(y~1,x,family = binomial),scope = list(lower = formula('y~1'),upper = form)))
+ main_effect = head(colnames(fit$model)[-1],nCPM)
+fit = glm(formula(paste('y~',paste(c(1,main_effect),collapse = '+',sep = '+'))),x,family = binomial)
+
+
+use = main_effect
+
+   x = (CPM[colnames(Data),][!geneUse,])
+  form = formula(paste('y~(',paste(c(1,use),collapse = '+'),')'))
+y = class[!geneUse]
+ fit2 = glm(form,x,family = binomial)
+  x = (CPM[colnames(Data.test),])
+cpm = round(predict(fit2,x,type = 'response'))
+
+pred2 = cpm*(!predUse*1) + Gene*(predUse*1)
+  
+  class.test!=pred2
+}
+
+set.seed(seed,"L'Ecuyer")
+#library(parallel) #If you have multiple cores on a non-windows machine try this!
+#ErrorTwoStage.melanoma = unlist(mclapply(as.list(1:dim(GE.melanoma)[2]),TwoStageLOOCV,GE.melanoma,class.melanoma,CPM.melanoma,mc.cores = 34))
+#ErrorTwoStage.breast = unlist(mclapply(as.list(1:dim(GE.breast)[2]),TwoStageLOOCV,GE.breast,class.breast,CPM.breast,mc.cores = 34))
+
+#If you are on windows use this, it will take awhile (10-15 minutes)
+ErrorTwoStage.melanoma = unlist(lapply(as.list(1:dim(GE.melanoma)[2]),TwoStageLOOCV,GE.melanoma,class.melanoma,CPM.melanoma))
+ErrorTwoStage.breast = unlist(lapply(as.list(1:dim(GE.breast)[2]),TwoStageLOOCV,GE.breast,class.breast,CPM.breast))
+@
+
+
+
+%Generate table of results
+<<>>=
+results = matrix(c(mean(unlist(lapply(split(ErrorGene.melanoma,class.melanoma),mean))),mean(unlist(lapply(split(ErrorGene.breast,class.breast),mean))),mean(unlist(lapply(split(ErrorCPM.melanoma,class.melanoma),mean))),mean(unlist(lapply(split(ErrorCPM.breast,class.breast),mean))),mean(unlist(lapply(split(ErrorPreval.melanoma,class.melanoma),mean))),mean(unlist(lapply(split(ErrorPreval.breast,class.breast),mean))),mean(unlist(lapply(split(ErrorTwoStage.melanoma,class.melanoma),mean))),mean(unlist(lapply(split(ErrorTwoStage.breast,class.breast),mean)))),ncol = 2,byrow= TRUE)
+
+colnames(results) = c('Melanoma','Breast cancer')
+rownames(results) = c('Gene expression', 'Clinical variables','Prevalidation','Multi-stage')
+
+
+@
+
+
+%Perform 5-fold CV on gene expression for boxplots
+<<>>=
+GeneFiveFold = function(kk,Data,class){
+  kfold = 5
+  
+  bin = floor(dim(Data)[2]/kfold)
+  test = list()
+  bins =  for(j in 1:(kfold-1)){
+    test[[j]] = ((j-1)*bin+1):(j*bin)
+  }
+  test[[kfold]] = ((kfold-1)*bin+1):dim(Data)[2]
+  
+  
+  ord = sample(1:dim(Data)[2],dim(Data)[2])
+  class.ord = class[ord]
+  error = rep(NA,length(class))
+  disc = rep(NA,length(class))
+  for(i in 1:kfold){
+    
+    DataTest = as.matrix(Data[,ord[test[[i]]]])
+    colnames(DataTest) = colnames(Data)[ord[test[[i]]]]
+    DataTrain = Data[,ord[-test[[i]]]]
+    
+    classify = GeneClassify(Data = DataTrain,class = class.ord[-test[[i]]],Data.test = DataTest,class.test = class.ord[test[[i]]])
+    error[ord[test[[i]]]] =  classify$pred!=class.ord[test[[i]]]
+      }
+  error
+}
+
+set.seed(seed,"L'Ecuyer")
+ErrorFiveFoldGene.melanoma.no = lapply(as.list(1:100),GeneFiveFold,GE.melanoma[,CPM.melanoma$variable9=='a1'],class.melanoma[CPM.melanoma$variable9=='a1'])
+ErrorFiveFoldGene.melanoma.no = unlist(lapply(ErrorFiveFoldGene.melanoma.no,mean))
+
+ErrorFiveFoldGene.melanoma.yes = lapply(as.list(1:100),GeneFiveFold,GE.melanoma[,CPM.melanoma$variable9=='a2'],class.melanoma[CPM.melanoma$variable9=='a2'])
+ErrorFiveFoldGene.melanoma.yes = unlist(lapply(ErrorFiveFoldGene.melanoma.yes,mean))
+
+@
+
+
+%Perform 5-fold CV on clinical data for boxplots
+<<>>=
+
+CPMFiveFold = function(kk,Data,class,CPM){
+  kfold = 5
+  
+  bin = floor(dim(Data)[2]/kfold)
+  test = list()
+  bins =  for(j in 1:(kfold-1)){
+    test[[j]] = ((j-1)*bin+1):(j*bin)
+  }
+  test[[kfold]] = ((kfold-1)*bin+1):dim(Data)[2]
+  
+  
+  ord = sample(1:dim(Data)[2],dim(Data)[2])
+  class.ord = class[ord]
+  error = rep(NA,length(class))
+  disc = rep(NA,length(class))
+  for(i in 1:kfold){
+    
+    DataTest = as.matrix(Data[,ord[test[[i]]]])
+    colnames(DataTest) = colnames(Data)[ord[test[[i]]]]
+    DataTrain = Data[,ord[-test[[i]]]]
+    
+    classify = CPMClassify2(Data = DataTrain,class = class.ord[-test[[i]]],Data.test = DataTest,class.test = class.ord[test[[i]]],CPM)
+    error[ord[test[[i]]]] =  classify$pred!=class.ord[test[[i]]]
+  }
+  error
+}
+
+CPMClassify2 = function(Data,class,Data.test,class.test,CPM){
+  y= (class)
+use = colnames(CPM)
+
+   x = (CPM[colnames(Data),])
+  form = formula(paste('y~(',paste(c(1,use),collapse = '+'),')'))
+
+ fit1 = glm(form,x,family = binomial)
+  x = (CPM[colnames(Data.test),])
+disc = predict(fit1,x,type = 'link')
+  pred2 = round(predict(fit1,x,type = 'response'))
+  
+  list(pred = pred2,disc = disc)
+}
+
+# Clinical variables will struggle with 5-fold CV. To give them the best chance possible perform variable selection outside of CV. While biased this will prevent CV from breaking.
+x = CPM.melanoma
+y = class.melanoma
+nUniq = apply(x,2,function(x)length(unique(x)))
+minPrev = apply(x,2,function(x)min(table(x)))
+use = names(which((minPrev>5&nUniq>1)|nUniq>10))
+upper = formula(paste('y~',paste(use,collapse = '+')))
+fit = step(glm(y~1,x,family=binomial),scope = list(lower=formula('y~1'),upper=upper))
+main_effect = colnames(fit$model)[-1]
+  
+set.seed(seed,"L'Ecuyer")
+ErrorFiveFoldCPM.melanoma.no = lapply(as.list(1:100),CPMFiveFold,GE.melanoma[,CPM.melanoma$variable9=='a1'],class.melanoma[CPM.melanoma$variable9=='a1'],CPM.melanoma[,main_effect])
+ErrorFiveFoldCPM.melanoma.no = unlist(lapply(ErrorFiveFoldCPM.melanoma.no,mean))
+
+ErrorFiveFoldCPM.melanoma.yes = lapply(as.list(1:100),CPMFiveFold,GE.melanoma[,CPM.melanoma$variable9=='a2'],class.melanoma[CPM.melanoma$variable9=='a2'],CPM.melanoma[,main_effect])
+ErrorFiveFoldCPM.melanoma.yes = unlist(lapply(ErrorFiveFoldCPM.melanoma.yes,mean))
+
+
+@
+
+%Generate Boxplots
+<<boxplots,fig.width=6,fig.height=2>>=
+library(ggplot2)
+library(reshape2)
+library (grid)
+library(gridExtra)
+
+Error = c(ErrorFiveFoldGene.melanoma.no, ErrorFiveFoldGene.melanoma.yes)
+Data = data.frame(Error = Error, Extranodal.Spread = as.factor(rep(c('Without','With'),c(100,100))))
+b1 = ggplot(Data, aes(x = Extranodal.Spread, y = Error)) + ylim(0,1)+
+  geom_boxplot(aes(fill = Extranodal.Spread)) + 
+  theme_bw() + xlab("Extranodal Spread") + ylab("Average 5-fold CV error")+guides(fill=FALSE)+
+  theme(plot.margin = unit(c(0,.1,0,0), "cm"))+ggtitle("Gene expression data")
+
+
+Error = c(ErrorFiveFoldCPM.melanoma.no, ErrorFiveFoldCPM.melanoma.yes)
+Data = data.frame(Error = Error, Extranodal.Spread = as.factor(rep(c('Without','With'),c(100,100))))
+b2 = ggplot(Data, aes(x = Extranodal.Spread, y = Error)) + ylim(0,1)+
+  geom_boxplot(aes(fill = Extranodal.Spread)) + 
+  theme_bw() + xlab("Extranodal Spread") + ylab("")+theme(plot.margin = unit(c(0,.1,0,1), "cm"))+guides(fill=FALSE)+ ggtitle("Clinical data")
+
+
+gb1<- ggplot_gtable(ggplot_build(b1))
+gb2<- ggplot_gtable(ggplot_build(b2))
+
+grid.arrange(gb1,gb2, nrow=1)
+           
+      
+@
+
+%Generate table of sample classification errors
+<<errorComparison>>=
+
+o = order(paste(class.melanoma))
+x = rbind(ErrorGene.melanoma,ErrorCPM.melanoma,prognosis.melanoma[names(class.melanoma)])[,o]
+x[x=='TRUE'] = 'Incorrect'
+x[x=='FALSE'] = 'Correct'
+colnames(x) = 1:ncol(x)
+rownames(x) = c('Gene expression','Clinical','Prognosis')
+
+x = c(ErrorGene.melanoma,ErrorCPM.melanoma)
+x[x=='TRUE'] = 'Incorrect'
+x[x=='FALSE'] = 'Correct'
+prog.melanoma = prognosis.melanoma
+prog.melanoma[prog.melanoma=='GP'] = 'Good'
+prog.melanoma[prog.melanoma=='PP'] = 'Poor'
+
+x = data.frame(Classified = x,Prognosis = rep(paste(prog.melanoma[names(class.melanoma)],'    '),2),Classifier = c(rep('Gene expression',length(ErrorGene.melanoma)),rep('Clinical',length(ErrorGene.melanoma))),Samples = rep(names(class.melanoma),2),Intercept = as.factor(rep('Prognosis',length(class.melanoma)*2)))
+
+lev = (x$Samples)[order(x$Prognosis)]
+lev = lev[!duplicated(lev)]
+x$Samples <- factor(x$Samples, levels=lev)
+
+p8<-ggplot(x, aes(x = Samples,y = Classifier, fill=Classified))+ geom_tile(aes(fill = Classified),colour = "white") +  scale_fill_manual(values=c("black", "gray80")) +theme_bw()+ theme(axis.ticks.x = element_blank(), axis.text.x = element_blank()) +theme(plot.margin = unit(c(-1, 1, 0.5, 0.5), "lines"))#+ylab("")
+
+p9<-ggplot(x, aes(x = Samples, y=Intercept))+ geom_tile(aes(fill = Prognosis),colour = "white")+   scale_fill_manual(values=c("#C77CFF","#00BE67"))+theme_bw()+ theme(axis.ticks.x = element_blank(), axis.text.x = element_blank(),axis.title.x=element_blank()) +ylab("")
+  
+gp8<- ggplot_gtable(ggplot_build(p8))
+gp9<- ggplot_gtable(ggplot_build(p9))
+
+#This identifies the maximum width
+maxWidth = unit.pmax(gp8$widths[2:3], gp9$widths[2:3])
+#Set each to the maximum width
+gp9$widths[2:3] <- maxWidth
+gp8$widths[2:3] <- maxWidth
+#Put them together
+grid.arrange(gp9,gp8,ncol = 1,heights = c(.23,.3))
+  
+  
+
+@
+
+
+
+\begin{frame}{} 
+  \begin{columns}[T]
+    \begin{column}{.48\linewidth}
+
+      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\DeclareMathSizes{13}{21}{15}{11}
+
+      \begin{block}{Try this for yourself!}
+      This poster was generated in knitr. As a result of this, it is reproducible. To access the code and files needed to generate this poster visit \texttt{www.ellispatrick.com/presentations}.
+     
+\vskip1ex
+    
+      
+If you like any of the ideas in this poster please cite them. As the corresponding manuscript for this poster is currently in preparation please ask me for further details on how you can do this.
+      
+     
+      
+     \end{block} 
+     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%      
+     
+      
+     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    \begin{block}{Summary}
+
+\begin{itemize}
+\item Integrating multi-layered high-throughput data for biomarker discovery or classification is challenging from many aspects. 
+\item Modelling the sample heterogeneity observed in the gene expression data with clinical data identifies treatment variables as informative about the predictive value of the gene expression data. 
+\item Our proposed two-stage classification scheme performs well in comparison to single platform and additive approaches of multiple platforms on the two presented datasets. On both datasets it provides
+
+\vskip1ex
+
+\begin{enumerate}
+\item 1) \hskip1ex  improved predictive performance, and,
+\item 2) \hskip1ex  models which make biological sense.
+\end{enumerate}
+\end{itemize}
+   
+     \end{block}     
+            
+            
+            
+        
+            
+\begin{block}{Background}
+The accurate determination of patient prognosis is an important unmet need in the management of many cancers. When analysing a melanoma dataset with multiple high-throughput data sources, it was noted that different data sources appear to correctly classify different patients into their correct prognosis groups \citep{Jayawardana2014}. This is illustrated below for some matched gene expression and clinical data.
+
+\vskip1ex
+
+ <<errorComp,ref.label=c("errorComparison"),include=TRUE,echo=FALSE,fig.width=6.75,fig.height=1.9,out.width = '0.9\\textwidth',out.height ='0.24\\textwidth'>>=
+@
+
+\vskip1ex
+
+After further investigation it was noted that a clinical variable (extranodal spread in the tumour) was reasonably adept at explaining which samples the gene expression could and could not classify correctly. We illustrate the significance of this in the boxplots below. The boxplots were created by performing average 5-fold cross-validation within those samples with extranodal spread and within those without it. We observe that there appears to be no genomic signal that differentiates prognosis in the patients with extranodal spread and strong signal in those without it. Furthermore, the reverse can be observed in the clinical data. 
+
+\vskip1ex
+
+ <<boxplotShow,ref.label=c("boxplots"),include=TRUE,echo=FALSE,fig.width=6,fig.height=2.025,out.width = '0.8\\textwidth',out.height ='0.27\\textwidth'>>=
+@
+
+\vskip1ex
+
+These observations motivated the creation of a hierarchical multi-stage classification procedure for using gene expression and clinical data to predict prognosis in cancer patients.
+
+\end{block}     
+                     
+            
+    
+    \begin{block}{Datasets}
+We consider two cancer datasets. The datasets were chosen as they contained gene expression data and relatively detailed clinical data.
+
+\vskip1ex
+
+
+\textbf{Melanoma}
+
+The melanoma data contains mRNA expression profiles of metastatic melanomas \citep{Jayawardana2014} generated on an Illumina HumanWG-6 v3.0 expression beadchip (GEO Accession Number: GSE54467). We restricted the analysis to stage III patients and split the patients into two  survival classes: leaving 23 patients surviving more than 4 years after resection of lymph node metastatic disease with no sign of relapse and 22 patients who died of melanoma within 12 months of resection. 
+
+
+
+\vskip1ex
+
+
+\textbf{Breast cancer}
+
+The breast cancer data contains mRNA expression profiles of human breast cancer \citep{Chin2006} generated on an  Affymetrix HT-U133AA of Av2 GeneChip (ArrayExpress experiment number: E-TABM-158).  We restricted the analysis to stage II patients and split the patients into two  recurrence classes: consisting of 18 patients with recurrence less than 5 years and 31 with recurrence  greater than 5 years. 
+    
+  \end{block} 
+     
+\end{column}
+
+
+    \begin{column}{.48\linewidth}
+          
+          
+          
+          
+          
+          
+<<include=FALSE>>=
+x = 1+1
+x
+
+res = print(xtable(results,align = "r|cc"))
+#,caption = c("A table comparing the LOOCV balanced error rates of four different classification approaches on a melanoma and breast cancer dataset")
+@
+
+\tikzstyle{mybox} = [draw=red, fill=blue!20, very thick,
+    rectangle, rounded corners, inner sep=10pt, inner ysep=20pt]
+
+\begin{block}{A multi-stage classifier}
+
+
+\begin{figure}[ht!]
+\centering
+\begin{tikzpicture}[scale=1,transform shape]
+
+  % Draw diagram elements
+  \path \etape{1}{\vspace{-0.5em}
+  \begin{center}\textbf{\color[rgb]{0,0.14,0.75}{Determine which samples the gene expression data can reliably classify.}}\\ \end{center}
+  
+  Perform leave-one-out cross-validation of a classification scheme on the gene expression data. From this prediction errors can be calculated, giving an indication of which samples were able to be correctly classified by the gene expression data.};
+
+  \path (p1.south)+(0.0,-5.5) \etape{2}{\vspace{-0.5em}\begin{center}
+  \textbf{\color[rgb]{0,0.14,0.75}{Determine if there are any clinical variables that explain for which samples the gene expression is informative.}}\\
+	\end{center}
+	  Use logistic regression to identify clinical variables which can predict which samples the gene expression data correctly and incorrectly classified. To avoid over-fitting we perform a variable selection step, selecting the variable with smallest AIC.};
+ 
+  \path (p2.south)+(0.0,-6.15) \etape{3}{\vspace{-0.5em}\begin{center}
+	\textbf{\color[rgb]{0,0.14,0.75}{Train two classifiers.}}\\
+	\end{center}
+	Split the data into those that are predicted to be classifiable by the gene expression data and those that are not. For those samples for which the gene expression data is predicted to be informative, train a new classifier using the gene expression data. For those samples for which the gene expression data is not predicted to be informative, train a classifier using the clinical variables.	};
+	
+	  \path (p3.south)+(0.0,-4.25) \etape{4}{\vspace{-0.5em}\begin{center}
+	\textbf{\color[rgb]{0,0.14,0.75}{Use classifiers to predict any new samples.}}\\
+	\end{center}
+	Given some new samples, predict if the gene expression would be informative for these samples. Given these predictions then classify the samples using the appropriate classifier. 
+	};
+
+
+  % Draw arrows between elements
+  \path [line] (p1.south) -- node [above] {} (p2);
+  \path [line] (p2.south) -- node [above] {} (p3);
+  \path [line] (p3.south) -- node [above] {} (p4);
+
+
+ \end{tikzpicture}
+%\caption{A flow chart describing the steps in our proposed multi-stage classifier.}
+\label{fig:Pipeline}
+\end{figure}
+
+
+
+\end{block}
+
+%Generate gene heatmaps.
+<<TestPlot1,include=FALSE,echo=FALSE>>=
+library(ggplot2)
+library(reshape2)
+library (grid)
+library(gridExtra)
+
+o = order(paste(CPM.breast$hormonal.therapy.,class.breast))
+D = rowMeans(GE.breast[,CPM.breast$hormonal.therapy.=='no'&class.breast==0])-rowMeans(GE.breast[,CPM.breast$hormonal.therapy.=='no'&class.breast==1])
+sig = names(sort(-abs(D)))[1:100]
+
+Data = GE.breast[sig,o] - rowMeans(GE.breast[sig,])
+cc = as.character(class.breast[o])
+hmcols<-colorRampPalette(c("green","black","red"))(256)
+hmcols<-colorRampPalette(c("green","black","red"))(256)
+colnames(Data) = 1:ncol(Data)
+ Rowv <- rowMeans(Data, na.rm = TRUE)
+    hcr <- hclust(dist(Data))
+    ddr <- as.dendrogram(hcr)
+    ddr <- reorder(ddr, Rowv)
+    rowInd <- order.dendrogram(ddr)
+
+p1<-ggplot(melt(Data[rowInd,]), aes(Var2,Var1, fill=value))+theme_bw()+
+ geom_tile(aes(fill = value),colour = "white")  + 
+  scale_fill_gradientn(colours= hmcols) +xlab("Samples") + ylab("Genes") + 
+  theme(axis.ticks = element_blank(), axis.text = element_blank(),axis.title.x =element_text(color="black") ,axis.title.y=element_blank())+    geom_raster()+ guides(fill=FALSE)+
+  theme(plot.margin = unit(c(0,0,0,0), "cm"))
+ 
+
+x = rbind(as.numeric(CPM.breast$hormonal.therapy.)+1,class.breast)[,o]
+colnames(x) = 1:ncol(x)
+rownames(x) = c('Hormonal.therapy','Recurrence')
+x = x[2:1,]
+p3<-ggplot(melt(x), aes(Var2,Var1, fill=value))+theme_bw()+ geom_tile(aes(fill = value),colour = "white")+
+   scale_fill_gradientn(colours= c("#C77CFF","#00BE67","#F8766D", "#0083D8")) + guides(fill=FALSE)+
+  theme(axis.ticks = element_blank(), axis.text.x = element_blank(),axis.text.y=element_text(color="black"),axis.title=element_blank()) +theme(plot.margin = unit(c(0,0,0,0), "cm"))+ ggtitle("Breast cancer data")
+
+
+o = order(paste(CPM.melanoma$variable9,class.melanoma))
+D = rowMeans(GE.melanoma[,CPM.melanoma$variable9=='a1'&class.melanoma==0])-rowMeans(GE.melanoma[,CPM.melanoma$variable9=='a1'&class.melanoma==1])
+sig = names(sort(-abs(D)))[1:100]
+
+
+Data = GE.melanoma[sig,o] - rowMeans(GE.melanoma[sig,])
+cc = as.character(class.melanoma[o])
+hmcols<-colorRampPalette(c("green","black","red"))(256)
+colnames(Data) = 1:ncol(Data)
+ Rowv <- rowMeans(Data, na.rm = TRUE)
+    hcr <- hclust(dist(Data))
+    ddr <- as.dendrogram(hcr)
+    ddr <- reorder(ddr, Rowv)
+    rowInd <- order.dendrogram(ddr)
+
+p2<-ggplot(melt(Data[rowInd,]), aes(Var2,Var1, fill=value))+theme_bw()+
+  scale_fill_gradientn(colours= hmcols) +xlab("Samples") + ylab("Genes") + 
+  theme(axis.ticks = element_blank(), axis.text = element_blank(),axis.title =element_text(color="black") )+    geom_raster()+ guides(fill=FALSE)+
+  theme(plot.margin = unit(c(0,0,0,0), "cm"))+ theme(axis.title.y = element_text(vjust=-10))
+ 
+x = rbind(as.numeric(CPM.melanoma$variable9)+1,class.melanoma)[,o]
+colnames(x) = 1:ncol(x)
+rownames(x) = c('Extranodal.spread','Prognosis')
+x = x[2:1,]
+p4<-ggplot(melt(x), aes(Var2,Var1, fill=value))+theme_bw()+ geom_tile(aes(fill = value),colour = "white")+
+   scale_fill_gradientn(colours= c("#C77CFF","#00BE67","#F8766D", "#0083D8")) + guides(fill=FALSE)+
+  theme(axis.ticks = element_blank(),axis.text.y=element_text(color="black"), axis.text.x = element_blank(),axis.title=element_blank()) +theme(plot.margin = unit(c(0,0,0,0), "cm"))+ ggtitle("Melanoma data")
+
+
+
+
+gp4<- ggplot_gtable(ggplot_build(p4))
+gp2<- ggplot_gtable(ggplot_build(p2))
+
+gp1<- ggplot_gtable(ggplot_build(p1))
+gp3<- ggplot_gtable(ggplot_build(p3))
+#This identifies the maximum width
+maxWidth = unit.pmax(gp4$widths[2:3], gp2$widths[2:3])
+#Set each to the maximum width
+gp4$widths[2:3] <- maxWidth
+gp2$widths[2:3] <- maxWidth
+gp1$widths[2:3] <- maxWidth
+gp3$widths[2:3] <- maxWidth
+#Put them together
+grid.arrange(gp4,gp3, gp2,gp1,heights = c(10, 3 * 10),widths = c(20,20,20,20))
+
+
+
+
+@
+
+
+        \begin{block}{Results}
+Here we compare the leave-one-out cross-validation balanced error rates of four approaches to classifying the melanoma and breast cancer data. These include performing DLDA on the gene expression data (Gene expression), logistic regression on the clinical data (Clinical variables), performing logistic regression on the CPM variables with a prevalidated decision vector from the gene expression data (Prevalidation) \citep{Tibshirani2002} and our proposed multi-stage approach. These are given in the following table
+
+\vskip1ex
+
+\Sexpr{res}
+
+\vskip1ex 
+
+We next consider performing our multi-stage approach outside of cross-validation. Here it selects extranodal spread and hormonal therapy as the variables that predict the informativeness of the gene expression data in the melanoma and breast cancer data respectively.  While there are no treatment variables in the melanoma data, it is likely that patients with extranodal growth would have received additional radiation treatment and so this might be considered as a proxy for differential treatment.
+For each dataset we created images of the relative gene expression for the top 100 genes with largest fold change between good and poor prognosis below. In both datasets, for those patients that received treatment the gene expression is much less informative than for those that were not treated. This behaviour is most pronounced in the breast cancer data.
+
+
+      <<APPTestPlot1,ref.label=c("TestPlot1"),include=TRUE,echo=FALSE,fig.width=7.425,fig.height=3,out.width = '0.99\\textwidth',out.height ='0.4\\textwidth'>>=
+@
+
+\vspace{-0.5em}
+     \end{block}
+
+
+
+
+
+
+
+
+
+
+
+\begin{block}{References}
+\small
+  \vspace{-1.2ex}
+\bibliographystyle{natbib}
+\bibliography{references}
+  \vspace{-.95ex}
+\end{block}
+
+      \vspace{0.7ex}
+      
+      \begin{beamercolorbox}[rounded=true,shadow=true,colsep*=.75ex,sep=0ex,vmode]{block body}%
+    \ifbeamercolorempty[bg]{block body}{\vskip0ex}{\vskip-2ex}\vbox{}%
+  \vspace{.5ex}
+   \footnotesize
+   Supported in part by the NHMRC (PG633004, GM and SJS), Cancer Institute New South Wales (10TPG/1/02 GM and SJS) and the ARC (FT0991918, YY,  DP130100488, SM and YY, and DP110100061 JO).
+   \vspace{-.6ex}
+  \end{beamercolorbox}
+
+
+
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\end{document}

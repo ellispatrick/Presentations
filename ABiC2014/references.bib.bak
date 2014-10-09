@@ -1,0 +1,66 @@
+% This file was created with JabRef 2.10.
+% Encoding: Cp1252
+
+
+@Article{Chin2006,
+  Title                    = {Genomic and transcriptional aberrations linked to breast cancer pathophysiologies.},
+  Author                   = {Chin, Koei and others},
+  Journal                  = {Cancer Cell},
+  Year                     = {2006},
+
+  Month                    = {Dec},
+  Number                   = {6},
+  Pages                    = {529--541},
+  Volume                   = {10},
+
+  __markedentry            = {[Ellis:6]},
+  Abstract                 = {This study explores the roles of genome copy number abnormalities (CNAs) in breast cancer pathophysiology by identifying associations between recurrent CNAs, gene expression, and clinical outcome in a set of aggressively treated early-stage breast tumors. It shows that the recurrent CNAs differ between tumor subtypes defined by expression pattern and that stratification of patients according to outcome can be improved by measuring both expression and copy number, especially high-level amplification. Sixty-six genes deregulated by the high-level amplifications are potential therapeutic targets. Nine of these (FGFR1, IKBKB, ERBB2, PROCC, ADAM9, FNTA, ACACA, PNMT, and NR1D1) are considered druggable. Low-level CNAs appear to contribute to cancer progression by altering RNA and cellular metabolism.},
+  Doi                      = {10.1016/j.ccr.2006.10.009},
+  Institution              = {Comprehensive Cancer Center, 2340 Sutter Street, University of California, San Francisco, San Francisco, California 94143.},
+  Keywords                 = {Breast Neoplasms, etiology/genetics/pathology/therapy; Chromosome Aberrations; Female; Gene Amplification; Gene Dosage; Gene Expression Profiling; Genomics; Humans; Transcription, Genetic},
+  Language                 = {eng},
+  Medline-pst              = {ppublish},
+  Owner                    = {Ellis},
+  Pii                      = {S1535-6108(06)00315-1},
+  Pmid                     = {17157792},
+  Timestamp                = {2014.10.07},
+  Url                      = {http://dx.doi.org/10.1016/j.ccr.2006.10.009}
+}
+
+@Article{Jayawardana2014,
+  Title                    = {Determination of prognosis in metastatic melanoma through integration of clinico-pathologic, mutation, mRNA, microRNA, and protein information.},
+  Author                   = {Jayawardana, Kaushala and others},
+  Journal                  = {Int J Cancer},
+  Year                     = {2014},
+
+  Month                    = {Jun},
+
+  Abstract                 = {In patients with metastatic melanoma, the identification and validation of accurate prognostic biomarkers will assist rational treatment planning. Studies based on "-omics" technologies have focussed on a single high-throughput data type such as gene or microRNA transcripts. Occasionally, these features have been evaluated in conjunction with limited clinico-pathologic data. With the increased availability of multiple data types, there is a pressing need to tease apart which of these sources contain the most valuable prognostic information. We evaluated and integrated several data types derived from the same tumor specimens in AJCC stage III melanoma patients-gene, protein, and microRNA expression as well as clinical, pathologic and mutation information-to determine their relative impact on prognosis. We used classification frameworks based on pre-validation and bootstrap multiple imputation to compare the prognostic power of each data source, both individually as well as integratively. We found that the prognostic utility of clinico-pathologic information was not out-performed by any of the various "-omics" platforms. Rather, a combination of clinico-pathologic variables and mRNA expression data performed best. Furthermore, a patient-based classification analysis revealed that the prognostic accuracy of various data types was not the same for different patients. This indicates that ongoing development in the individualized evaluation of melanoma patients must take account of the value of both traditional and novel "-omics" measurements.},
+  Doi                      = {10.1002/ijc.29047},
+  Institution              = { Statistics, The University of Sydney, Sydney, NSW, Australia.},
+  Language                 = {eng},
+  Medline-pst              = {aheadofprint},
+  Owner                    = {Ellis},
+  Pmid                     = {24975271},
+  Timestamp                = {2014.10.06},
+  Url                      = {http://dx.doi.org/10.1002/ijc.29047}
+}
+
+@Article{Tibshirani2002,
+  Title                    = {Pre-validation and inference in microarrays.},
+  Author                   = {Tibshirani, Robert J. and Efron, Brad},
+  Journal                  = {Stat Appl Genet Mol Biol},
+  Year                     = {2002},
+
+  __markedentry            = {[Ellis:]},
+  Abstract                 = {In microarray studies, an important problem is to compare a predictor of disease outcome derived from gene expression levels to standard clinical predictors. Comparing them on the same dataset that was used to derive the microarray predictor can lead to results strongly biased in favor of the microarray predictor. We propose a new technique called "pre-validation'' for making a fairer comparison between the two sets of predictors. We study the method analytically and explore its application in a recent study on breast cancer.},
+  Doi                      = {10.2202/1544-6115.1000},
+  Institution              = {Stanford University, USA. tibs@stat.stanford.edu},
+  Language                 = {eng},
+  Medline-pst              = {ppublish},
+  Owner                    = {Ellis},
+  Pmid                     = {16646777},
+  Timestamp                = {2014.10.06},
+  Url                      = {http://dx.doi.org/10.2202/1544-6115.1000}
+}
+
