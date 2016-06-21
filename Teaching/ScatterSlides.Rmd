@@ -74,13 +74,8 @@ colnames(data) = c('Energy','Added.Sugar','Carbohydrates','Protein','Fat','Fibre
 - Previous methods were good for dealing with one variable at a time.
 </div>
 
-## What if we have two variables? 
-
-> - How do X and Y relate to each other?
 
 ## What if we have two variables? {.columns-2}
-
-<center> Quantitative vs Quantitative </center>
 
 ```{r ctscts, echo=FALSE,warning = FALSE,results='asis'}
 
@@ -95,6 +90,17 @@ tab = paste0("$$",print(xtable(x,align = 'cc|cc',digits=1), type = "latex", incl
 tab = gsub('\\\\_','_',tab)
 cat(tab)
 
+```
+
+
+> - How do X and Y relate to each other?
+
+
+## What if we have two variables? {.columns-2}
+
+<center> Quantitative vs Quantitative </center>
+
+```{r ctscts, echo=FALSE,warning = FALSE,results='asis'}
 ```
 
 
