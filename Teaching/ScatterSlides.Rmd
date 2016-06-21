@@ -417,7 +417,7 @@ We can use scatter plots for visualation of two variables
 - Presentation generated with ioslides in RStudio.
 - Fully reproducable.
 - Available on github:
-- https://github.com/ellispatrick/Presentations/Teaching
+- https://github.com/ellispatrick/Presentations/
 
 ## R version
 
