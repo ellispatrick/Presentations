@@ -68,8 +68,8 @@ colnames(data) = c('Energy','Added.Sugar','Carbohydrates','Protein','Fat','Fibre
 - Summary measures
 
 <div class="notes">
-- Tabulating information.
-- Visualising data.
+- Frequency tables for tabulating information.
+- Histograms & barplots and visualising data.
 - Mean and variance to describe the location and spread of a variable.
 - Previous methods were good for dealing with one variable at a time.
 </div>
@@ -79,9 +79,9 @@ colnames(data) = c('Energy','Added.Sugar','Carbohydrates','Protein','Fat','Fibre
 
 ```{r ctscts, echo=FALSE,warning = FALSE,results='asis'}
 
+#load some packages, xtable for displaying our tables and shiny for the interactive scatter plot later on.
 suppressMessages(library(shiny))
 suppressMessages(library(xtable))
-suppressMessages(library(pander))
 
 set.seed(123)
 x = data.frame(i = 1:10, 'X_i' = round(rnorm(10,10),1),'Y_i'= round(rnorm(10,10),1))
@@ -111,7 +111,7 @@ cat(tab)
 
 
 <div class="notes">
-- We can tabulate the information.
+- A quantitative variable can be continuous or discrete. 
 </div>
 
 ## What if we have two variables? {.columns-2}
@@ -136,6 +136,7 @@ cat(tab)
 
 
 <div class="notes">
+A qualititve variable is a variable that has unordered categories.
 </div>
 
 
@@ -173,7 +174,7 @@ Quantitative vs Quantitative
 
 <div class="notes">
 - The approach we use for relating to variables together depends on whether they are quantitive or qualitative.
-- We will focus on quantitative vs quantitative.
+- We will focus on quantitative vs quantitative for the next few lectures.
 </div>
 
 ## Data example {.flexbox .vcenter}
@@ -190,6 +191,7 @@ Quantitative vs Quantitative
 <img src="smh2.png" alt="Drawing" style="width: 800px;"/>
 
 <div class="notes">
+- Cerial consumption has been on the decline for a number of years.
 </div>
 
 ## How can we find out if our cereal is "good" to eat?
@@ -250,8 +252,9 @@ p1
 ```
 
 <div class="notes">
-Data is a swarm of points.
-
+- Data is a swarm of points.
+- Each point is a cerial.
+- Data is sloping up to the right. A statistician says these to variables are positively associated.
 </div>
 
 
@@ -306,6 +309,7 @@ suppressMessages(multiplot(p3, p2,p4, cols=3))
 ```
 
 <div class="notes">
+- Scatter plot can indicate if the association is strong or weak.
 </div>
 
 ## Differences in association {.flexbox .vcenter}
@@ -366,6 +370,7 @@ multiplot(p3, p2,p4, cols=3)
 ```
 
 <div class="notes">
+We can use a scatter plot to make predictions.
 </div>
 
 ## Prediction {.flexbox .vcenter}
@@ -375,6 +380,8 @@ multiplot(p3, p2,p4, cols=3)
 ```
 
 <div class="notes">
+- This line is the regression line.
+- Visually, it appears to capture the relationship between sugar and energy.
 </div>
 
 ## Prediction {.flexbox .vcenter}
@@ -384,6 +391,7 @@ multiplot(p3, p2,p4, cols=3)
 ```
 
 <div class="notes">
+- While we can use this plot to make a prediction, there is a lot of variability around this line so we should be wary of the accuracy of this prediction.
 </div>
 
 
@@ -396,6 +404,7 @@ pairsD3(data,leftmar = 22,col = "#56B4E9",opacity = 0.8)
 
 
 <div class="notes">
+- We can use scatter plots to explore lots of variables.
 </div>
 
 ## Summary {.build}
